@@ -42,7 +42,6 @@ using namespace std;
 
 #define InputNeurons  100	  
 #define HiddenNeurons 50
-#define a 0.1f
 #define sqr(x)        ((x)*(x))
 
 typedef int InArr[InputNeurons];
@@ -188,7 +187,7 @@ void BackPropagationNet::CalculateOutputWithBias()
 		{
 			Sum += WeigthsHidd[i][j] * InputLayer[j];
 		}
-		HiddenLayer[i] = (float)(1 / (1 + exp(-a * Sum)));
+		HiddenLayer[i] = (float)(1 / (1 + exp(Sum)));
 	}
 
 	//Calculate output for output layer.
@@ -198,9 +197,9 @@ void BackPropagationNet::CalculateOutputWithBias()
 		Sum += WeigthsOut[n] * HiddenLayer[n];
 
 	//Make decision about output neuron.
-	if ((float)(1 / (1 + exp(-a * Sum))) < Threshold1)
+	if ((float)(1 / (1 + exp(Sum))) < Threshold1)
 		OutputLayer = 0;
-	else if ((float)(1 / (1 + exp(-a * Sum))) < Threshold2 && (float)(1 / (1 + exp(-a * Sum))) >= Threshold1)
+	else if ((float)(1 / (1 + exp(Sum))) < Threshold2 && ((float)(1 / (1 + exp(Sum)))) >= Threshold1)
 		OutputLayer = 0.5;
 	else						                     //We can not decide.
 		OutputLayer = 1;
@@ -222,7 +221,7 @@ void BackPropagationNet::CalculateOutput()
 			Sum += WeigthsHidd[i][j] * InputLayer[j];
 		}
 
-		HiddenLayer[i] = (float)(1 / (1 + exp(-a * Sum)));
+		HiddenLayer[i] = (float)(1 / (1 + exp(Sum)));
 	}
 
 	//Calculate output for output layer.
@@ -232,10 +231,10 @@ void BackPropagationNet::CalculateOutput()
 		Sum += WeigthsOut[n] * HiddenLayer[n];
 
 	//Make decision about output neuron.
-    if ((float)(1 / (1 + exp(-a * Sum))) < Threshold2 && ((float)(1 / (1 + exp(-a * Sum)))) >= Threshold1)
+    if (((float)(1 / (1 + exp(Sum)))) < Threshold2 && (((float)(1 / (1 + exp(Sum))))) >= Threshold1)
 	OutputLayer = 0.5;
 
-	else if ((float)(1 / (1 + exp(-a * Sum))) < (Threshold1))
+	else if ((float)(1 / (1 + exp(Sum))) < (Threshold1))
 		OutputLayer = 0;
 
 	else						                     //We can not decide.
@@ -264,10 +263,10 @@ void BackPropagationNet::AdjustWeigthsWithBias(int Target)
 	float hidd_deltas[HiddenNeurons + 1], out_delta;
 
 	//Calcilate deltas for all layers.
-	out_delta = (a * OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
+	out_delta = (OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
 
 	for (i = 0; i < HiddenNeurons + 1; i++)
-		hidd_deltas[i] = (a * HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
+		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
 		//(1 - sqr(HiddenLayer[i])) * out_delta * WeigthsOut[i];
 
 	//Change weigths.
@@ -292,10 +291,10 @@ void BackPropagationNet::AdjustWeigths(int Target)
 	float hidd_deltas[HiddenNeurons], out_delta;
 
 	//Calcilate deltas for all layers.
-	out_delta = (a * OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
+	out_delta = (OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
 
 	for (i = 0; i < HiddenNeurons; i++)
-		hidd_deltas[i] = (a * HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
+		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
 
 	//Change weigths.
 	for (i = 0; i < HiddenNeurons; i++)
@@ -596,7 +595,7 @@ bool Data::SetInputOutput(char In[][Y][X], double* Out, int num_patterns)
 	//Set corresponding to input expected output.
 	for (i = 0; i < Units; i++)
 	{
-		Output[i] = (Out[i] == '*') ? Hi : Low;
+		Output[i] = Out[i];
 	}
 
 	return true;
