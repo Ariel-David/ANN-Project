@@ -52,7 +52,7 @@ class Data
 {
 public:
 	InArr* Input;
-	int* Output;
+	float* Output;
 	int Units;     //Numbers (units) in input ( and output ) now.
 
 	Data();
@@ -94,7 +94,7 @@ private:
 	//Calculate output for current input (without Bias).
 	void CalculateOutput();
 
-	void ItIsError(int);           //NetError = true if it was error.
+	void ItIsError(float);           //NetError = true if it was error.
 
 	void AdjustWeigthsWithBias(int);                     //With Bias.
 	void AdjustWeigths(int);				          //Without Bias.
@@ -145,8 +145,8 @@ BackPropagationNet::BackPropagationNet()
 void BackPropagationNet::Initialize()
 {
 	int i, j;
-	Threshold1 = 0.33333f;
-	Threshold2 =  0.66666f;
+	Threshold1 = 0.3f;
+	Threshold2 =  0.6f;
 	NetError = false;
 	
 
@@ -187,7 +187,7 @@ void BackPropagationNet::CalculateOutputWithBias()
 		{
 			Sum += WeigthsHidd[i][j] * InputLayer[j];
 		}
-		HiddenLayer[i] = (float)(1 / (1 + exp(Sum)));
+		HiddenLayer[i] = (float)(1/(1 + exp(-1 * Sum)));
 	}
 
 	//Calculate output for output layer.
@@ -221,7 +221,7 @@ void BackPropagationNet::CalculateOutput()
 			Sum += WeigthsHidd[i][j] * InputLayer[j];
 		}
 
-		HiddenLayer[i] = (float)(1 / (1 + exp(Sum)));
+		HiddenLayer[i] = (float)(1/(1 + exp(-1 * Sum)));
 	}
 
 	//Calculate output for output layer.
@@ -231,21 +231,22 @@ void BackPropagationNet::CalculateOutput()
 		Sum += WeigthsOut[n] * HiddenLayer[n];
 
 	//Make decision about output neuron.
-    if (((float)(1 / (1 + exp(Sum)))) < Threshold2 && (((float)(1 / (1 + exp(Sum))))) >= Threshold1)
-	OutputLayer = 0.5;
-
-	else if ((float)(1 / (1 + exp(Sum))) < (Threshold1))
+	float temp = (float)(1/(1 + exp(-1*Sum)));
+	if ((float)(1 /(1 + exp(-1 * Sum))) < Threshold1)//<0.33 circle
 		OutputLayer = 0;
 
+	else if (((float)(1/(1 + exp(-1 * Sum)))) < Threshold2 && (((float)(1/(1 + exp(-1 * Sum))))) >= Threshold1)//[0.33,0.66]
+	OutputLayer = 0.5; // elips
+
 	else						                     //We can not decide.
-		OutputLayer = 1;
+		OutputLayer = 1; // triangle
 }
 
 
 //_________________________________________________________________________
 
 
-void BackPropagationNet::ItIsError(int Target)
+void BackPropagationNet::ItIsError(float Target)
 {
 	if (((float)Target - OutputLayer))
 		NetError = true;
@@ -267,7 +268,6 @@ void BackPropagationNet::AdjustWeigthsWithBias(int Target)
 
 	for (i = 0; i < HiddenNeurons + 1; i++)
 		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
-		//(1 - sqr(HiddenLayer[i])) * out_delta * WeigthsOut[i];
 
 	//Change weigths.
 	for (i = 0; i < HiddenNeurons + 1; i++)
@@ -433,8 +433,10 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
 		cout << Success << " %   success" << endl << endl;
 
-		//if (Success < 90)
-			//Threshold = RandomEqualReal(0.2f, 0.9f);
+		if (Success < 90) {
+			Threshold1 = RandomEqualReal(0.2f, 0.9f);
+			Threshold2 = RandomEqualReal(0.2f, 0.9f);
+		}
 
 	} while (Success < 90 && loop <= 20000);
 
@@ -573,7 +575,7 @@ bool Data::SetInputOutput(char In[][Y][X], double* Out, int num_patterns)
 			return false;
 		}
 
-		if (!(Output = new int[num_patterns]))
+		if (!(Output = new float[num_patterns]))
 		{
 			cout << "Insufficient memory for Output" << endl;
 			delete[] Input;
@@ -631,7 +633,7 @@ void main()
 
 	//TRAINING NETWORK WITH 5 GROUPS (15 SHAPES)
 	
-		if (!data_obj.SetInputOutput(TrainingInput1, TrainingOutput1, TrainPatt))
+		if (!data_obj.SetInputOutput(TrainingInput1, TrainingOutput1, TrainPatt1))
 			return;
 
 	
@@ -657,7 +659,7 @@ void main()
 	back_prop_obj.TestNet(data_obj);
 
 	close(fd);
-	fd = open("result_Test_5_Groups.txt", O_CREAT | O_RDWR, 0777);
+	fd = open("result_10_GROUPS.txt", O_CREAT | O_RDWR, 0777);
 
 	if (fd == -1)
 	{
@@ -669,7 +671,7 @@ void main()
 
 	back_prop_obj.Initialize();
 
-	if (!data_obj.SetInputOutput(TrainingInput2, TrainingOutput2, TrainPatt))
+	if (!data_obj.SetInputOutput(TrainingInput2, TrainingOutput2, TrainPatt2))
 		return;
 
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))
@@ -692,8 +694,9 @@ void main()
 		return;
 
 	back_prop_obj.TestNet(data_obj);
+
 	close(fd);
-	fd = open("result_Test_10_Groups.txt", O_CREAT | O_RDWR, 0777);
+	fd = open("result_19_GROUPS.txt", O_CREAT | O_RDWR, 0777);
 
 	if (fd == -1)
 	{
@@ -705,7 +708,7 @@ void main()
 
 	back_prop_obj.Initialize();
 
-	if (!data_obj.SetInputOutput(TrainingInput3, TrainingOutput3, TrainPatt))
+	if (!data_obj.SetInputOutput(TrainingInput3, TrainingOutput3, TrainPatt3))
 		return;
 
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))

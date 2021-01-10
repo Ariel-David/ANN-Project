@@ -1,16 +1,19 @@
 #define X            11
 #define Y            10
 
-#define TrainPatt    15
-#define TestPatt     15
+#define TrainPatt1    15
+#define TrainPatt2    30
+#define TrainPatt3   57
+
+#define TestPatt     3
 
 
 //***************************** PATTERNS **********************************
 
 
-static char TrainingInput1[TrainPatt][Y][X] = { {
+static char TrainingInput1[TrainPatt1][Y][X] = { {
 "----------",
-"- ****----",
+"--****----",
 "-*-----*--",
 "-*-----*--",
 "---****---",
@@ -189,7 +192,7 @@ static char TrainingInput1[TrainPatt][Y][X] = { {
 "----------"}
 };
 
-static char TrainingInput2[TrainPatt*2][Y][X]= {
+static char TrainingInput2[TrainPatt2][Y][X]= {
 {
 "----------",
 "- ****----",
@@ -551,7 +554,7 @@ static char TrainingInput2[TrainPatt*2][Y][X]= {
 "----------"}
 };
 
-static char TrainingInput3[TrainPatt*3 + 12][Y][X]={
+static char TrainingInput3[TrainPatt3][Y][X]={
 {
 "----------",
 "----------",
@@ -1238,11 +1241,11 @@ static char TrainingInput3[TrainPatt*3 + 12][Y][X]={
 };
 
 
-static double TrainingOutput1[TrainPatt + 1] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
+static double TrainingOutput1[TrainPatt1] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
 
-static double TrainingOutput2[(TrainPatt + 1)*2] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
+static double TrainingOutput2[TrainPatt2] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
 
-static double TrainingOutput3[(TrainPatt + 1)*3 + 12] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
+static double TrainingOutput3[TrainPatt3] = {0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1,0,0.5,1};
 
 
 static char TestInput[TestPatt][Y][X] = {{
@@ -1282,4 +1285,4 @@ static char TestInput[TestPatt][Y][X] = {{
 "*********-"}
 };
 
-static double TestOutput[TestPatt + 1] = {0,0.5,1};
+static double TestOutput[TestPatt+1] = {0,0.5,1};
