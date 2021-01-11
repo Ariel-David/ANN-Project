@@ -39,7 +39,6 @@ using namespace std;
 #define Low           -1
 #define Hi	          +1
 #define Bias          1
-
 #define InputNeurons  100	  
 #define HiddenNeurons 50
 #define sqr(x)        ((x)*(x))
@@ -88,16 +87,15 @@ private:
 
 	float RandomEqualReal(float, float);
 
-	//Calculate output for current input (with Bias).
-	void CalculateOutputWithBias();
+	float Sig(float);
+
 
 	//Calculate output for current input (without Bias).
 	void CalculateOutput();
 
 	void ItIsError(float);           //NetError = true if it was error.
 
-	void AdjustWeigthsWithBias(int);                     //With Bias.
-	void AdjustWeigths(int);				          //Without Bias.
+	void AdjustWeigths(int);				          
 
 public:
 	//Initialization of weigths and variables.
@@ -106,22 +104,17 @@ public:
 	//Initialize all and randomly weigths.
 	void  Initialize();
 
-	//Train network up to 90% success or up to 20000 cycles 
-	//(with Bias).
-	bool TrainNetWithBias(Data&);
 
 	//Train network up to 90% success or up to 20000 cycles 
 	//(without Bias).
 	bool TrainNet(Data&);
 
-	//Testing of network (with Bias). Return success percent.
-	int TestNetWithBias(Data&);
 
 	//Testing of network (without Bias). Return success percent.
 	int TestNet(Data&);
 
 	const int ReturnOutput() { return OutputLayer; };
-
+	
 	float LearningRate() { return nu; };
 	float Threshold1Value() { return Threshold1; };
 	float Threshold2Value() { return Threshold2; };
@@ -170,43 +163,13 @@ float BackPropagationNet::RandomEqualReal(float LowN, float HighN)
 }
 
 
+
 //_________________________________________________________________________
-
-
-void BackPropagationNet::CalculateOutputWithBias()
-{
-	float Sum;
-
-	//Calculate output for hidden layer.
-	HiddenLayer[0] = (float)Bias;
-
-	for (int i = 1; i < HiddenNeurons + 1; i++)
-	{
-		Sum = 0.0f;
-		for (int j = 0; j < InputNeurons + 1; j++)
-		{
-			Sum += WeigthsHidd[i][j] * InputLayer[j];
-		}
-		HiddenLayer[i] = (float)(1/(1 + exp(-1 * Sum)));
-	}
-
-	//Calculate output for output layer.
-	Sum = 0.0f;
-
-	for (int n = 0; n < HiddenNeurons + 1; n++)
-		Sum += WeigthsOut[n] * HiddenLayer[n];
-
-	//Make decision about output neuron.
-	if ((float)(1 / (1 + exp(Sum))) < Threshold1)
-		OutputLayer = 0;
-	else if ((float)(1 / (1 + exp(Sum))) < Threshold2 && ((float)(1 / (1 + exp(Sum)))) >= Threshold1)
-		OutputLayer = 0.5;
-	else						                     //We can not decide.
-		OutputLayer = 1;
+float BackPropagationNet::Sig(float x) {
+	float ans;
+	ans = 1/(1+exp(-1*x));
+	return ans;
 }
-
-//_________________________________________________________________________
-
 
 void BackPropagationNet::CalculateOutput()
 {
@@ -221,7 +184,7 @@ void BackPropagationNet::CalculateOutput()
 			Sum += WeigthsHidd[i][j] * InputLayer[j];
 		}
 
-		HiddenLayer[i] = (float)(1/(1 + exp(-1 * Sum)));
+		HiddenLayer[i] = Sig(Sum);
 	}
 
 	//Calculate output for output layer.
@@ -231,11 +194,11 @@ void BackPropagationNet::CalculateOutput()
 		Sum += WeigthsOut[n] * HiddenLayer[n];
 
 	//Make decision about output neuron.
-	float temp = (float)(1/(1 + exp(-1*Sum)));
-	if ((float)(1 /(1 + exp(-1 * Sum))) < Threshold1)//<0.33 circle
+	float temp = Sig(Sum);
+	if (Sig(Sum) < 0.333333)//<0.33 circle
 		OutputLayer = 0;
 
-	else if (((float)(1/(1 + exp(-1 * Sum)))) < Threshold2 && (((float)(1/(1 + exp(-1 * Sum))))) >= Threshold1)//[0.33,0.66]
+	else if (Sig(Sum) < 0.666666 && Sig(Sum) >= 0.333333)//[0.33,0.66]
 	OutputLayer = 0.5; // elips
 
 	else						                     //We can not decide.
@@ -258,32 +221,6 @@ void BackPropagationNet::ItIsError(float Target)
 //_________________________________________________________________________
 
 
-void BackPropagationNet::AdjustWeigthsWithBias(int Target)
-{
-	int   i, j;
-	float hidd_deltas[HiddenNeurons + 1], out_delta;
-
-	//Calcilate deltas for all layers.
-	out_delta = (OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
-
-	for (i = 0; i < HiddenNeurons + 1; i++)
-		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
-
-	//Change weigths.
-	for (i = 0; i < HiddenNeurons + 1; i++)
-		WeigthsOut[i] = WeigthsOut[i] + (nu * out_delta * HiddenLayer[i]);
-
-	for (i = 0; i < HiddenNeurons + 1; i++)
-	{
-		for (j = 0; j < InputNeurons + 1; j++)
-			WeigthsHidd[i][j] = WeigthsHidd[i][j] +
-			(nu * hidd_deltas[i] * InputLayer[j]);
-	}
-}
-
-
-//_________________________________________________________________________
-
 
 void BackPropagationNet::AdjustWeigths(int Target)
 {
@@ -291,7 +228,8 @@ void BackPropagationNet::AdjustWeigths(int Target)
 	float hidd_deltas[HiddenNeurons], out_delta;
 
 	//Calcilate deltas for all layers.
-	out_delta = (OutputLayer) * (1 - OutputLayer) * (Target - OutputLayer);
+
+	out_delta =  Sig(OutputLayer) * (Target - OutputLayer);
 
 	for (i = 0; i < HiddenNeurons; i++)
 		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
@@ -305,76 +243,6 @@ void BackPropagationNet::AdjustWeigths(int Target)
 		for (j = 0; j < InputNeurons + 1; j++)
 			WeigthsHidd[i][j] = WeigthsHidd[i][j] + (nu * hidd_deltas[i] * InputLayer[j]);
 	}
-}
-
-
-//_________________________________________________________________________
-bool BackPropagationNet::TrainNetWithBias(Data& data_obj)
-{
-	int Error, j, loop = 0, Success;
-
-	cout << endl;
-	cout << "   --------------------------------------------------------";
-	cout << endl << endl;
-	cout << "                  TRAINING NETWORK WITH BIAS" << endl << endl;
-	cout << "   --------------------------------------------------------";
-	cout << endl << endl;
-
-	do
-	{
-		Error = 0;
-		loop++;
-
-		cout << "Thresholds =    " << Threshold1 << " , "<< Threshold2 << endl;
-
-		//Printing the number of loop.
-		if (loop < 10)
-			cout << "Training loop:  " << loop << "       ...   ";
-		if (loop >= 10 && loop < 100)
-			cout << "Training loop:  " << loop << "      ...   ";
-		if (loop >= 100 && loop < 1000)
-			cout << "Training loop:  " << loop << "     ...   ";
-		if (loop >= 1000 && loop < 10000)
-			cout << "Training loop:  " << loop << "    ...   ";
-		else if (loop >= 10000)
-			cout << "Training loop:  " << loop << "   ...   ";
-
-		//Train network (do one cycle).
-		for (int i = 0; i < data_obj.Units; i++)
-		{
-			//Set current input.
-			InputLayer[0] = Bias;
-			for (j = 0; j < InputNeurons; j++)
-				InputLayer[j + 1] = data_obj.Input[i][j];
-
-			CalculateOutputWithBias();
-			ItIsError(data_obj.Output[i]);
-
-			//If it was error, change weigths (Error = sum of errors in
-			//one cycle of train).
-			if (NetError)
-			{
-				Error++;
-				AdjustWeigthsWithBias(data_obj.Output[i]);
-			}
-		}
-
-		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
-		cout << Success << " %   success" << endl << endl;
-
-		//if (Success < 90)
-			//Threshold = RandomEqualReal(0.2f, 0.9f);
-
-	} while (Success < 90 && loop <= 20000);
-
-	if (loop > 20000)
-	{
-		cout << "Training of network failure !" << endl;
-		return false;
-	}
-	else
-		return true;
-
 }
 
 
@@ -433,12 +301,12 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
 		cout << Success << " %   success" << endl << endl;
 
-		if (Success < 90) {
-			Threshold1 = RandomEqualReal(0.2f, 0.9f);
-			Threshold2 = RandomEqualReal(0.2f, 0.9f);
-		}
+		//if (Success < 90) {
+			//Threshold1 = RandomEqualReal(0.2f, 0.9f);
+		//	Threshold2 = RandomEqualReal(0.2f, 0.9f);
+		//}
 
-	} while (Success < 90 && loop <= 20000);
+	} while (Success < 75 && loop <= 20000);
 
 	if (loop > 20000)
 	{
@@ -448,43 +316,6 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 	else
 		return true;
 
-}
-
-
-//_________________________________________________________________________
-int BackPropagationNet::TestNetWithBias(Data& data_obj)
-{
-	int Error = 0, j, Success;
-
-	cout << endl << endl << endl;
-	cout << "---------------------------------------------------------------------";
-	cout << endl << endl;
-	cout << "               TEST NETWORK WITH BIAS" << endl << endl;
-	cout << "---------------------------------------------------------------------";
-	cout << endl << endl;
-
-	cout << "Test network    ...  ";
-
-	//Train network (do one cycle).
-	for (int i = 0; i < data_obj.Units; i++)
-	{
-		//Set current input.
-		InputLayer[0] = Bias;
-		for (j = 0; j < InputNeurons; j++)
-			InputLayer[j + 1] = data_obj.Input[i][j];
-
-		CalculateOutputWithBias();
-		ItIsError(data_obj.Output[i]);
-
-		//Error = sum of errors in this one cycle of test.
-		if (NetError)
-			Error++;
-	}
-
-	Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
-	cout << Success << "%   success" << endl;
-
-	return Success;
 }
 
 
@@ -616,11 +447,10 @@ void main()
 
 	cout << "Back Propagation Network" << endl << endl;
 	cout << "This programm will not print anything onto display." << endl;
-	cout << "All results of this programm will be in files: result.txt ";
-	cout << "and result_bias.txt  after this " << endl;
-	cout << "programm will stop to run." << endl;
-	cout << "Before runing this programm againe, please delete old ";
-	cout << "file with results." << endl;
+	cout << "All results of this programm will be in files: result_5_GROUPS.txt,result_10_GROUPS.txt,result_19_GROUPS.txt " << endl;
+	cout << "after this programm will stop to run." << endl;
+	cout << "Please wait until it's all done" << endl;
+	cout << "Before runing this programm again, please delete the old files";
 
 	close(1);
 	int fd = open("result_5_GROUPS.txt", O_CREAT | O_RDWR, 0777);
