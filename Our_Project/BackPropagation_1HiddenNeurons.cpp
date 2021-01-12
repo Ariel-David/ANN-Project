@@ -53,15 +53,21 @@ public:
 	InArr* Input;
 	float* Output;
 	int Units;     //Numbers (units) in input ( and output ) now.
+	int order_arr[15];
 
 	Data();
 	~Data();
+
+
+	void SetUnorderedNumbers(int);
 
 	//Set input and output vectors from patterns.
 	bool SetInputOutput(char[][Y][X], double*, int);
 
 	//Free memory of Input and Output units
 	void Reset();
+
+	bool SetInputOutputRand(char[][Y][X], double*, int);
 };
 
 class BackPropagationNet
@@ -109,9 +115,9 @@ public:
 	//(without Bias).
 	bool TrainNet(Data&);
 
-
 	//Testing of network (without Bias). Return success percent.
 	int TestNet(Data&);
+	bool TrainNetRand(Data&);
 
 	const int ReturnOutput() { return OutputLayer; };
 	
@@ -256,7 +262,7 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 	cout << endl;
 	cout << "   --------------------------------------------------------";
 	cout << endl << endl;
-	cout << "                       TRAINING NETWORK" << endl << endl;
+	cout << "                       TRAINING NETWORK: SEQUENTIALY" << endl << endl;
 	cout << "   --------------------------------------------------------";
 	cout << endl << endl;
 
@@ -301,12 +307,9 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
 		cout << Success << " %   success" << endl << endl;
 
-		//if (Success < 90) {
-			//Threshold1 = RandomEqualReal(0.2f, 0.9f);
-		//	Threshold2 = RandomEqualReal(0.2f, 0.9f);
-		//}
+	
 
-	} while (Success < 75 && loop <= 20000);
+	} while (Success < 80 && loop <= 20000);
 
 	if (loop > 20000)
 	{
@@ -329,7 +332,7 @@ int BackPropagationNet::TestNet(Data& data_obj)
 	cout << endl << endl << endl;
 	cout << "---------------------------------------------------------------------";
 	cout << endl << endl;
-	cout << "                    TEST NETWORK" << endl << endl;
+	cout << "                    TEST NETWORK SEQUENTIALY " << endl << endl;
 	cout << "---------------------------------------------------------------------";
 	cout << endl << endl;
 
@@ -355,7 +358,72 @@ int BackPropagationNet::TestNet(Data& data_obj)
 
 	return Success;
 }
+//_________________________________________________________________________
 
+bool BackPropagationNet::TrainNetRand(Data& data_obj) {
+	int Error, j, loop = 0, Success;
+
+	cout << endl;
+	cout << "   --------------------------------------------------------";
+	cout << endl << endl;
+	cout << "                       TRAINING NETWORK RANDOMALY" << endl << endl;
+	cout << "   --------------------------------------------------------";
+	cout << endl << endl;
+
+	do
+	{
+		Error = 0;
+		loop++;
+
+		cout << "Thresholds =    " << Threshold1 << " , " << Threshold2 << endl;
+
+		//Printing the number of loop.
+		if (loop < 10)
+			cout << "Training loop:  " << loop << "       ...   ";
+		if (loop >= 10 && loop < 100)
+			cout << "Training loop:  " << loop << "      ...   ";
+		if (loop >= 100 && loop < 1000)
+			cout << "Training loop:  " << loop << "     ...   ";
+		if (loop >= 1000 && loop < 10000)
+			cout << "Training loop:  " << loop << "    ...   ";
+		else if (loop >= 10000)
+			cout << "Training loop:  " << loop << "   ...   ";
+
+		//Train network (do one cycle).
+		for (int i = 0; i < data_obj.Units; i++)
+		{
+			//Set current input.
+			for (j = 0; j < InputNeurons; j++)
+				InputLayer[j] = data_obj.Input[i][j];
+
+			CalculateOutput();
+			ItIsError(data_obj.Output[i]);
+
+			//If it was error, change weigths (Error = sum of errors in
+			//one cycle of train).
+			if (NetError)
+			{
+				Error++;
+				AdjustWeigths(data_obj.Output[i]);
+			}
+		}
+
+		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
+		cout << Success << " %   success" << endl << endl;
+
+
+
+	} while (Success < 90 && loop <= 20000);
+
+	if (loop > 20000)
+	{
+		cout << "Training of network failure !" << endl;
+		return false;
+	}
+	else
+		return true;
+
+}
 
 
 
@@ -389,6 +457,91 @@ void Data::Reset()
 
 
 //_________________________________________________________________________
+
+bool Data::SetInputOutputRand(char In[][Y][X], double* Out, int num_patterns) {
+	int n, i, j;
+
+	if (Units != num_patterns)
+	{
+		if (Units)
+			Reset();
+
+		if (!(Input = new InArr[num_patterns]))
+		{
+			cout << "Insufficient memory for Input" << endl;
+			return false;
+		}
+
+		if (!(Output = new float[num_patterns]))
+		{
+			cout << "Insufficient memory for Output" << endl;
+			delete[] Input;
+			return false;
+		}
+
+		Units = num_patterns;
+	}
+
+	SetUnorderedNumbers(num_patterns);
+
+	for (n = 0; n < Units; n++)                         //Set input vectors.
+	{
+		for (i = 0; i < Y; i++)
+		{
+			for (j = 0; j < (X - 1); j++)
+				Input[n][i * (X - 1) + j] = (In[order_arr[n]][i][j] == '*') ? Hi : Low;
+		}
+	}
+
+	//Set corresponding to input expected output.
+	for (i = 0; i < Units; i++)
+	{
+		Output[i] = Out[order_arr[i]];
+	}
+
+	return true;
+}
+
+
+void Data::SetUnorderedNumbers(int size)
+{
+
+	int number, index;
+	if (size == 30) {
+		//delete[] order_arr;
+		int order_arr[30];
+	}
+	else if (size == 57) {
+		//delete[] order_arr;
+		int order_arr[57];
+	}
+
+	for (int i = 0; i < size; i++)                      //Initialize array.
+		order_arr[i] = -1;
+
+	for (number = 0; number < size; number++)
+	{
+		index = rand() % size;
+		if (order_arr[index] == -1)         //If the place is empty.
+		{
+			order_arr[index] = number;
+		}
+
+		else      //If place arr[index] is not empty, then find next
+		{		    //empty place.
+			while (order_arr[index] != -1)
+			{
+				index++;
+				index = index % size;
+			}
+
+			order_arr[index] = number;       //We finded empty place.
+		}
+	}
+}
+
+//_________________________________________________________________________
+
 
 
 bool Data::SetInputOutput(char In[][Y][X], double* Out, int num_patterns)
@@ -453,51 +606,88 @@ void main()
 	cout << "Before runing this programm again, please delete the old files";
 
 	close(1);
-	int fd = open("result_5_GROUPS.txt", O_CREAT | O_RDWR, 0777);
 
-	if (fd == -1)
+	//TRAINING NETWORK WITH 5 GROUPS (15 SHAPES)
+
+	//TRAINING NETWORK: SEQUENTIALY
+
+	int fd1 = open("result_5_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
+
+	if (fd1 == -1)
 	{
 		cout << "Error opening result file" << endl;
 		return;
 	}
 
-	//TRAINING NETWORK WITH 5 GROUPS (15 SHAPES)
-	
 		if (!data_obj.SetInputOutput(TrainingInput1, TrainingOutput1, TrainPatt1))
 			return;
 
-	
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))
 	{
 		back_prop_obj.Initialize();
-		close(fd);
-		remove("result_5_GROUPS.txt");
-		fd = open("result_5_GROUPS.txt", O_CREAT | O_RDWR, 0777);
+		close(fd1);
+		remove("result_5_GROUPS_SEQ.txt");
+		fd1 = open("result_5_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
 
-		if (fd == -1)
+		if (fd1 == -1)
 		{
 			cout << "Error opening result file" << endl;
 			return;
 		}
 	}
 
-	//TEST NETWORK 
+	//TEST NETWORK: SEQUENTIALY
 
 	if (!data_obj.SetInputOutput(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);
+	close(fd1);
 
-	close(fd);
-	fd = open("result_10_GROUPS.txt", O_CREAT | O_RDWR, 0777);
+	//TRAINING NETWORK: RANDOMALY
+	int fd2 = open("result_5_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
 
-	if (fd == -1)
+	if (fd2 == -1)
 	{
 		cout << "Error opening result file" << endl;
 		return;
 	}
 
-	//TRAINING NETWORK WITH 10 GROUPS (30 SHAPES)
+	back_prop_obj.Initialize();
+
+	if (!data_obj.SetInputOutputRand(TrainingInput1, TrainingOutput1, TrainPatt1))
+		return;
+
+	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
+	{
+		back_prop_obj.Initialize();
+		close(fd2);
+		remove("result_5_GROUPS_RAND.txt");
+		fd2 = open("result_5_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
+
+		if (fd2 == -1)
+		{
+			cout << "Error opening result file" << endl;
+			return;
+		}
+	}
+
+	//TEST NETWORK: RANDOMALY
+	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+		return;
+
+	back_prop_obj.TestNet(data_obj);
+	close(fd2);
+
+
+	//TRAINING NETWORK WITH 10 GROUPS SEQ (30 SHAPES)
+	int fd3 = open("result_10_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
+
+	if (fd3 == -1)
+	{
+		cout << "Error opening result file" << endl;
+		return;
+	}
 
 	back_prop_obj.Initialize();
 
@@ -507,34 +697,73 @@ void main()
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))
 	{
 		back_prop_obj.Initialize();
-		close(fd);
-		remove("result_10_GROUPS.txt");
-		fd = open("result_10_GROUPS.txt", O_CREAT | O_RDWR, 0777);
+		close(fd3);
+		remove("result_10_GROUPS_SEQ.txt");
+		fd3 = open("result_10_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
 
-		if (fd == -1)
+		if (fd3 == -1)
 		{
 			cout << "Error opening result file" << endl;
 			return;
 		}
 	}
 
-	//TEST NETWORK.
+	//TEST NETWORK SEQ.
 
 	if (!data_obj.SetInputOutput(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);
 
-	close(fd);
-	fd = open("result_19_GROUPS.txt", O_CREAT | O_RDWR, 0777);
+	close(fd3);
 
-	if (fd == -1)
+	//TRAINING NETWORK WITH 10 GROUPS RANDOMALY(30 SHAPES)
+
+	int fd4 = open("result_10_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
+
+	if (fd4 == -1)
 	{
 		cout << "Error opening result file" << endl;
 		return;
 	}
 
-	//TRAINING NETWORK WITH 19 GROUPS (57 SHAPES)
+	back_prop_obj.Initialize();
+
+	if (!data_obj.SetInputOutputRand(TrainingInput2, TrainingOutput2, TrainPatt2))
+		return;
+
+	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
+	{
+		back_prop_obj.Initialize();
+		close(fd4);
+		remove("result_10_GROUPS_RAND.txt");
+		fd4 = open("result_10_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
+
+		if (fd4 == -1)
+		{
+			cout << "Error opening result file" << endl;
+			return;
+		}
+	}
+
+	//TEST NETWORK RAND.
+
+	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+		return;
+
+	back_prop_obj.TestNet(data_obj);
+
+	close(fd4);
+
+	//TRAINING NETWORK WITH 19 GROUPS SEQ (57 SHAPES)
+
+	int fd5 = open("result_19_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
+
+	if (fd5 == -1)
+	{
+		cout << "Error opening result file" << endl;
+		return;
+	}
 
 	back_prop_obj.Initialize();
 
@@ -544,25 +773,60 @@ void main()
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))
 	{
 		back_prop_obj.Initialize();
-		close(fd);
-		remove("result_19_GROUPS.txt");
-		fd = open("result_19_GROUPS.txt", O_CREAT | O_RDWR, 0777);
+		close(fd5);
+		remove("result_19_GROUPS_SEQ.txt");
+		fd5 = open("result_19_GROUPS_SEQ.txt", O_CREAT | O_RDWR, 0777);
 
-		if (fd == -1)
+		if (fd5 == -1)
 		{
 			cout << "Error opening result file" << endl;
 			return;
 		}
 	}
 
-	//TEST NETWORK.
+	//TEST NETWORK SEQ.
 
 	if (!data_obj.SetInputOutput(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);
-	close(fd);
+	close(fd5);
 
+	//TRAINING NETWORK WITH 19 GROUPS RAND(57 SHAPES)
+
+	int fd6 = open("result_19_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
+
+	if (fd6 == -1)
+	{
+		cout << "Error opening result file" << endl;
+		return;
+	}
+
+	back_prop_obj.Initialize();
+
+	if (!data_obj.SetInputOutputRand(TrainingInput3, TrainingOutput3, TrainPatt3))
+		return;
+
+	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
+	{
+		back_prop_obj.Initialize();
+		close(fd6);
+		remove("result_19_GROUPS_RAND.txt");
+		fd6 = open("result_19_GROUPS_RAND.txt", O_CREAT | O_RDWR, 0777);
+
+		if (fd6 == -1)
+		{
+			cout << "Error opening result file" << endl;
+			return;
+		}
+	}
+	//TEST NETWORK RANDOMALY.
+
+	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+		return;
+
+	back_prop_obj.TestNet(data_obj);
+	close(fd6);
 }
 
 
