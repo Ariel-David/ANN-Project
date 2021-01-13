@@ -41,7 +41,6 @@ using namespace std;
 #define Bias          1
 #define InputNeurons  100	  
 #define HiddenNeurons 50
-#define sqr(x)        ((x)*(x))
 
 typedef int InArr[InputNeurons];
 
@@ -53,13 +52,18 @@ public:
 	InArr* Input;
 	float* Output;
 	int Units;     //Numbers (units) in input ( and output ) now.
-	int order_arr[15];
+	int order_arr_Test[9];
+	int order_arr15[15];
+	int order_arr30[30];
+	int order_arr57[57];
 
 	Data();
 	~Data();
 
-
-	void SetUnorderedNumbers(int);
+	void SetUnorderedNumbers_Test(int);
+	void SetUnorderedNumbers15(int);
+	void SetUnorderedNumbers30(int);
+	void SetUnorderedNumbers57(int);
 
 	//Set input and output vectors from patterns.
 	bool SetInputOutput(char[][Y][X], double*, int);
@@ -67,7 +71,10 @@ public:
 	//Free memory of Input and Output units
 	void Reset();
 
-	bool SetInputOutputRand(char[][Y][X], double*, int);
+	bool SetInputOutputRand_Test(char[][Y][X], double*, int);
+	bool SetInputOutputRand15(char[][Y][X], double*, int);
+	bool SetInputOutputRand30(char[][Y][X], double*, int);
+	bool SetInputOutputRand57(char[][Y][X], double*, int);
 };
 
 class BackPropagationNet
@@ -95,6 +102,7 @@ private:
 
 	float Sig(float);
 
+	float derivative(float);
 
 	//Calculate output for current input (without Bias).
 	void CalculateOutput();
@@ -169,13 +177,22 @@ float BackPropagationNet::RandomEqualReal(float LowN, float HighN)
 }
 
 
-
 //_________________________________________________________________________
+
 float BackPropagationNet::Sig(float x) {
 	float ans;
 	ans = 1/(1+exp(-1*x));
 	return ans;
 }
+
+float BackPropagationNet::derivative(float x)
+{
+	float ans;
+	ans = (exp(-1 * x)) / ((1 + exp(-1 * x)) * (1 + exp(-1 * x)));
+	return ans;
+}
+//_________________________________________________________________________
+
 
 void BackPropagationNet::CalculateOutput()
 {
@@ -235,10 +252,10 @@ void BackPropagationNet::AdjustWeigths(int Target)
 
 	//Calcilate deltas for all layers.
 
-	out_delta =  Sig(OutputLayer) * (Target - OutputLayer);
+	out_delta = derivative(OutputLayer) * (Target - OutputLayer);
 
 	for (i = 0; i < HiddenNeurons; i++)
-		hidd_deltas[i] = (HiddenLayer[i]) * (1 - HiddenLayer[i]) * out_delta * WeigthsOut[i];
+		hidd_deltas[i] = derivative(HiddenLayer[i]) * out_delta * WeigthsOut[i];
 
 	//Change weigths.
 	for (i = 0; i < HiddenNeurons; i++)
@@ -413,7 +430,7 @@ bool BackPropagationNet::TrainNetRand(Data& data_obj) {
 
 
 
-	} while (Success < 90 && loop <= 20000);
+	} while (Success < 80 && loop <= 20000);
 
 	if (loop > 20000)
 	{
@@ -458,7 +475,7 @@ void Data::Reset()
 
 //_________________________________________________________________________
 
-bool Data::SetInputOutputRand(char In[][Y][X], double* Out, int num_patterns) {
+bool Data::SetInputOutputRand_Test(char In[][Y][X], double* Out, int num_patterns) {
 	int n, i, j;
 
 	if (Units != num_patterns)
@@ -482,66 +499,285 @@ bool Data::SetInputOutputRand(char In[][Y][X], double* Out, int num_patterns) {
 		Units = num_patterns;
 	}
 
-	SetUnorderedNumbers(num_patterns);
+	SetUnorderedNumbers_Test(num_patterns);
 
 	for (n = 0; n < Units; n++)                         //Set input vectors.
 	{
 		for (i = 0; i < Y; i++)
 		{
 			for (j = 0; j < (X - 1); j++)
-				Input[n][i * (X - 1) + j] = (In[order_arr[n]][i][j] == '*') ? Hi : Low;
+				Input[n][i * (X - 1) + j] = (In[order_arr_Test[n]][i][j] == '*') ? Hi : Low;
 		}
 	}
 
 	//Set corresponding to input expected output.
 	for (i = 0; i < Units; i++)
 	{
-		Output[i] = Out[order_arr[i]];
+		Output[i] = Out[order_arr_Test[i]];
 	}
 
 	return true;
 }
 
 
-void Data::SetUnorderedNumbers(int size)
-{
+//_________________________________________________________________________
+bool Data::SetInputOutputRand15(char In[][Y][X], double* Out, int num_patterns) {
+	int n, i, j;
 
+	if (Units != num_patterns)
+	{
+		if (Units)
+			Reset();
+
+		if (!(Input = new InArr[num_patterns]))
+		{
+			cout << "Insufficient memory for Input" << endl;
+			return false;
+		}
+
+		if (!(Output = new float[num_patterns]))
+		{
+			cout << "Insufficient memory for Output" << endl;
+			delete[] Input;
+			return false;
+		}
+
+		Units = num_patterns;
+	}
+
+	SetUnorderedNumbers15(num_patterns);
+
+	for (n = 0; n < Units; n++)                         //Set input vectors.
+	{
+		for (i = 0; i < Y; i++)
+		{
+			for (j = 0; j < (X - 1); j++)
+				Input[n][i * (X - 1) + j] = (In[order_arr15[n]][i][j] == '*') ? Hi : Low;
+		}
+	}
+
+	//Set corresponding to input expected output.
+	for (i = 0; i < Units; i++)
+	{
+		Output[i] = Out[order_arr15[i]];
+	}
+
+	return true;
+}
+
+//_________________________________________________________________________
+
+bool Data::SetInputOutputRand30(char In[][Y][X], double* Out, int num_patterns) {
+	int n, i, j;
+
+	if (Units != num_patterns)
+	{
+		if (Units)
+			Reset();
+
+		if (!(Input = new InArr[num_patterns]))
+		{
+			cout << "Insufficient memory for Input" << endl;
+			return false;
+		}
+
+		if (!(Output = new float[num_patterns]))
+		{
+			cout << "Insufficient memory for Output" << endl;
+			delete[] Input;
+			return false;
+		}
+
+		Units = num_patterns;
+	}
+
+	SetUnorderedNumbers30(num_patterns);
+
+	for (n = 0; n < Units; n++)                         //Set input vectors.
+	{
+		for (i = 0; i < Y; i++)
+		{
+			for (j = 0; j < (X - 1); j++)
+				Input[n][i * (X - 1) + j] = (In[order_arr30[n]][i][j] == '*') ? Hi : Low;
+		}
+	}
+
+	//Set corresponding to input expected output.
+	for (i = 0; i < Units; i++)
+	{
+		Output[i] = Out[order_arr30[i]];
+	}
+
+	return true;
+}
+
+//_________________________________________________________________________
+
+bool Data::SetInputOutputRand57(char In[][Y][X], double* Out, int num_patterns) {
+	int n, i, j;
+
+	if (Units != num_patterns)
+	{
+		if (Units)
+			Reset();
+
+		if (!(Input = new InArr[num_patterns]))
+		{
+			cout << "Insufficient memory for Input" << endl;
+			return false;
+		}
+
+		if (!(Output = new float[num_patterns]))
+		{
+			cout << "Insufficient memory for Output" << endl;
+			delete[] Input;
+			return false;
+		}
+
+		Units = num_patterns;
+	}
+
+	SetUnorderedNumbers57(num_patterns);
+
+	for (n = 0; n < Units; n++)                         //Set input vectors.
+	{
+		for (i = 0; i < Y; i++)
+		{
+			for (j = 0; j < (X - 1); j++)
+				Input[n][i * (X - 1) + j] = (In[order_arr57[n]][i][j] == '*') ? Hi : Low;
+		}
+	}
+
+	//Set corresponding to input expected output.
+	for (i = 0; i < Units; i++)
+	{
+		Output[i] = Out[order_arr57[i]];
+	}
+
+	return true;
+}
+//_________________________________________________________________________
+
+void Data::SetUnorderedNumbers_Test(int size)
+{
 	int number, index;
-	if (size == 30) {
-		//delete[] order_arr;
-		int order_arr[30];
-	}
-	else if (size == 57) {
-		//delete[] order_arr;
-		int order_arr[57];
-	}
 
 	for (int i = 0; i < size; i++)                      //Initialize array.
-		order_arr[i] = -1;
+		order_arr_Test[i] = -1;
 
 	for (number = 0; number < size; number++)
 	{
 		index = rand() % size;
-		if (order_arr[index] == -1)         //If the place is empty.
+		if (order_arr_Test[index] == -1)         //If the place is empty.
 		{
-			order_arr[index] = number;
+			order_arr_Test[index] = number;
 		}
 
 		else      //If place arr[index] is not empty, then find next
 		{		    //empty place.
-			while (order_arr[index] != -1)
+			while (order_arr_Test[index] != -1)
 			{
 				index++;
 				index = index % size;
 			}
 
-			order_arr[index] = number;       //We finded empty place.
+			order_arr_Test[index] = number;       //We finded empty place.
 		}
 	}
 }
 
 //_________________________________________________________________________
 
+void Data::SetUnorderedNumbers15(int size)
+{
+	int number, index;
+
+	for (int i = 0; i < size; i++)                      //Initialize array.
+		order_arr15[i] = -1;
+
+	for (number = 0; number < size; number++)
+	{
+		index = rand() % size;
+		if (order_arr15[index] == -1)         //If the place is empty.
+		{
+			order_arr15[index] = number;
+		}
+
+		else      //If place arr[index] is not empty, then find next
+		{		    //empty place.
+			while (order_arr15[index] != -1)
+			{
+				index++;
+				index = index % size;
+			}
+
+			order_arr15[index] = number;       //We finded empty place.
+		}
+	}
+}
+
+
+//_________________________________________________________________________
+
+void Data::SetUnorderedNumbers30(int size)
+{
+	int number, index;
+
+	for (int i = 0; i < size; i++)                      //Initialize array.
+		order_arr30[i] = -1;
+
+	for (number = 0; number < size; number++)
+	{
+		index = rand() % size;
+		if (order_arr30[index] == -1)         //If the place is empty.
+		{
+			order_arr30[index] = number;
+		}
+
+		else      //If place arr[index] is not empty, then find next
+		{		    //empty place.
+			while (order_arr30[index] != -1)
+			{
+				index++;
+				index = index % size;
+			}
+
+			order_arr30[index] = number;       //We finded empty place.
+		}
+	}
+}
+
+//_________________________________________________________________________
+
+void Data::SetUnorderedNumbers57(int size)
+{
+	int number, index;
+
+	for (int i = 0; i < size; i++)                      //Initialize array.
+		order_arr57[i] = -1;
+
+	for (number = 0; number < size; number++)
+	{
+		index = rand() % size;
+		if (order_arr57[index] == -1)         //If the place is empty.
+		{
+			order_arr57[index] = number;
+		}
+
+		else      //If place arr[index] is not empty, then find next
+		{		    //empty place.
+			while (order_arr57[index] != -1)
+			{
+				index++;
+				index = index % size;
+			}
+
+			order_arr57[index] = number;       //We finded empty place.
+		}
+	}
+}
+
+//_________________________________________________________________________
 
 
 bool Data::SetInputOutput(char In[][Y][X], double* Out, int num_patterns)
@@ -655,7 +891,7 @@ void main()
 
 	back_prop_obj.Initialize();
 
-	if (!data_obj.SetInputOutputRand(TrainingInput1, TrainingOutput1, TrainPatt1))
+	if (!data_obj.SetInputOutputRand15(TrainingInput1, TrainingOutput1, TrainPatt1))
 		return;
 
 	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
@@ -673,7 +909,7 @@ void main()
 	}
 
 	//TEST NETWORK: RANDOMALY
-	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+	if (!data_obj.SetInputOutputRand_Test(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);
@@ -729,7 +965,7 @@ void main()
 
 	back_prop_obj.Initialize();
 
-	if (!data_obj.SetInputOutputRand(TrainingInput2, TrainingOutput2, TrainPatt2))
+	if (!data_obj.SetInputOutputRand30(TrainingInput2, TrainingOutput2, TrainPatt2))
 		return;
 
 	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
@@ -748,7 +984,7 @@ void main()
 
 	//TEST NETWORK RAND.
 
-	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+	if (!data_obj.SetInputOutputRand_Test(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);
@@ -804,7 +1040,7 @@ void main()
 
 	back_prop_obj.Initialize();
 
-	if (!data_obj.SetInputOutputRand(TrainingInput3, TrainingOutput3, TrainPatt3))
+	if (!data_obj.SetInputOutputRand57(TrainingInput3, TrainingOutput3, TrainPatt3))
 		return;
 
 	while (!(flag = back_prop_obj.TrainNetRand(data_obj)))
@@ -822,7 +1058,7 @@ void main()
 	}
 	//TEST NETWORK RANDOMALY.
 
-	if (!data_obj.SetInputOutputRand(TestInput, TestOutput, TestPatt))
+	if (!data_obj.SetInputOutputRand_Test(TestInput, TestOutput, TestPatt))
 		return;
 
 	back_prop_obj.TestNet(data_obj);

@@ -23,6 +23,7 @@
     <ProjectGuid>{91AC6568-0FB6-48AF-85E9-E74B711B87E3}</ProjectGuid>
     <RootNamespace>OurProject</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>BackPropagation_1HiddenNeurons</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
