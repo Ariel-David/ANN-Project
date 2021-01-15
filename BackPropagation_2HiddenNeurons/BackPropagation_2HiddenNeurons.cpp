@@ -40,7 +40,8 @@ using namespace std;
 #define Hi	          +1
 #define Bias          1
 #define InputNeurons  100	  
-#define HiddenNeurons 50
+#define HiddenNeurons1 50
+#define HiddenNeurons2 25
 
 typedef int InArr[InputNeurons];
 
@@ -75,6 +76,7 @@ public:
 	bool SetInputOutputRand15(char[][Y][X], double*, int);
 	bool SetInputOutputRand30(char[][Y][X], double*, int);
 	bool SetInputOutputRand57(char[][Y][X], double*, int);
+
 };
 
 class BackPropagationNet
@@ -83,14 +85,18 @@ private:
 	//Input to network (+ bias = 1 if it is).
 	int    InputLayer[InputNeurons + 1];
 
-	//Output from hidden layer -> it is input to output layer.
-	float  HiddenLayer[HiddenNeurons + 1];
+	//Output from hidden layer1 -> it is input to hidden layer2.
+	float  HiddenLayer1[HiddenNeurons1 + 1];
+
+	//Output from hidden layer2 -> it is input to output layer.
+	float  HiddenLayer2[HiddenNeurons2 + 1];
 
 	//Output of network - one neuron.
 	float  OutputLayer;	                    //Takes values: -1 or +1.
 
-	float  WeigthsOut[HiddenNeurons + 1];
-	float  WeigthsHidd[HiddenNeurons + 1][InputNeurons + 1];
+	float  WeigthsOut[HiddenNeurons1 + 1];
+	float  WeigthsHidd1[HiddenNeurons1 + 1][InputNeurons + 1];
+	float  WeigthsHidd2[HiddenNeurons2 + 1][InputNeurons + 1];
 	float  nu;                                       //Learning rate.
 	float  Threshold1;
 	float  Threshold2;
@@ -100,16 +106,17 @@ private:
 
 	float RandomEqualReal(float, float);
 
+	float derivative(float);
+
 	float Sig(float);
 
-	float derivative(float);
 
 	//Calculate output for current input (without Bias).
 	void CalculateOutput();
 
 	void ItIsError(float);           //NetError = true if it was error.
 
-	void AdjustWeigths(int);				          
+	void AdjustWeigths(int);
 
 public:
 	//Initialization of weigths and variables.
@@ -128,7 +135,7 @@ public:
 	bool TrainNetRand(Data&);
 
 	const int ReturnOutput() { return OutputLayer; };
-	
+
 	float LearningRate() { return nu; };
 	float Threshold1Value() { return Threshold1; };
 	float Threshold2Value() { return Threshold2; };
@@ -153,18 +160,24 @@ void BackPropagationNet::Initialize()
 {
 	int i, j;
 	Threshold1 = 0.3f;
-	Threshold2 =  0.6f;
+	Threshold2 = 0.6f;
 	NetError = false;
-	
+
 
 	//Randomize weigths (initialize).
-	for (i = 0; i < HiddenNeurons + 1; i++)
+	for (i = 0; i < HiddenNeurons1 + 1; i++)
 		WeigthsOut[i] = RandomEqualReal(-1.0f, 1.0f);
 
-	for (i = 0; i < HiddenNeurons + 1; i++)
+	for (i = 0; i < HiddenNeurons1 + 1; i++)
 	{
 		for (j = 0; j < InputNeurons + 1; j++)
-			WeigthsHidd[i][j] = RandomEqualReal(-1.0f, 1.0f);
+			WeigthsHidd1[i][j] = RandomEqualReal(-1.0f, 1.0f);
+	}
+
+	for (i = 0; i < HiddenNeurons2 + 1; i++)
+	{
+		for (j = 0; j < HiddenNeurons1 + 1; j++)
+			WeigthsHidd2[i][j] = RandomEqualReal(-1.0f, 1.0f);
 	}
 }
 //_________________________________________________________________________
@@ -177,13 +190,15 @@ float BackPropagationNet::RandomEqualReal(float LowN, float HighN)
 }
 
 
-//_________________________________________________________________________
 
+//_________________________________________________________________________
 float BackPropagationNet::Sig(float x) {
 	float ans;
-	ans = 1/(1+exp(-1*x));
+	ans = 1 / (1 + exp(-1 * x));
 	return ans;
 }
+
+//_________________________________________________________________________
 
 float BackPropagationNet::derivative(float x)
 {
@@ -193,28 +208,39 @@ float BackPropagationNet::derivative(float x)
 }
 //_________________________________________________________________________
 
-
 void BackPropagationNet::CalculateOutput()
 {
 	float Sum;
 
-	//Calculate output for hidden layer.
-	for (int i = 0; i < HiddenNeurons; i++)
+	//Calculate output for hidden layer1.
+	for (int i = 0; i < HiddenNeurons1; i++)
 	{
 		Sum = 0.0f;
 		for (int j = 0; j < InputNeurons; j++)
 		{
-			Sum += WeigthsHidd[i][j] * InputLayer[j];
+			Sum += WeigthsHidd1[i][j] * InputLayer[j];
 		}
 
-		HiddenLayer[i] = Sig(Sum);
+		HiddenLayer1[i] = Sig(Sum);
+	}
+
+	//Calculate output for hidden layer2.
+	for (int i = 0; i < HiddenNeurons2; i++)
+	{
+		Sum = 0.0f;
+		for (int j = 0; j < HiddenNeurons1; j++)
+		{
+			Sum += WeigthsHidd2[i][j] * HiddenLayer1[j];
+		}
+
+		HiddenLayer2[i] = Sig(Sum);
 	}
 
 	//Calculate output for output layer.
 	Sum = 0.0f;
 
-	for (int n = 0; n < HiddenNeurons; n++)
-		Sum += WeigthsOut[n] * HiddenLayer[n];
+	for (int n = 0; n < HiddenNeurons2; n++)
+		Sum += WeigthsOut[n] * HiddenLayer2[n];
 
 	//Make decision about output neuron.
 	float temp = Sig(Sum);
@@ -222,7 +248,7 @@ void BackPropagationNet::CalculateOutput()
 		OutputLayer = 0;
 
 	else if (Sig(Sum) < 0.666666 && Sig(Sum) >= 0.333333)//[0.33,0.66]
-	OutputLayer = 0.5; // elips
+		OutputLayer = 0.5; // elips
 
 	else						                     //We can not decide.
 		OutputLayer = 1; // triangle
@@ -248,23 +274,33 @@ void BackPropagationNet::ItIsError(float Target)
 void BackPropagationNet::AdjustWeigths(int Target)
 {
 	int i, j;
-	float hidd_deltas[HiddenNeurons], out_delta;
+	float hidd_deltas1[HiddenNeurons1], out_delta;
+	float hidd_deltas2[HiddenNeurons2];
 
 	//Calcilate deltas for all layers.
 
 	out_delta = derivative(OutputLayer) * (Target - OutputLayer);
 
-	for (i = 0; i < HiddenNeurons; i++)
-		hidd_deltas[i] = derivative(HiddenLayer[i]) * out_delta * WeigthsOut[i];
+	for (i = 0; i < HiddenNeurons1; i++)
+		hidd_deltas1[i] = derivative(HiddenLayer1[i]) * out_delta * WeigthsOut[i];
+
+	for (i = 0; i < HiddenNeurons2; i++)
+		hidd_deltas2[i] = derivative(HiddenLayer2[i]) * out_delta * WeigthsOut[i];
 
 	//Change weigths.
-	for (i = 0; i < HiddenNeurons; i++)
-		WeigthsOut[i] = WeigthsOut[i] + (nu * out_delta * HiddenLayer[i]);
+	for (i = 0; i < HiddenNeurons2; i++)
+		WeigthsOut[i] = WeigthsOut[i] + (nu * out_delta * HiddenLayer2[i]);
 
-	for (i = 0; i < HiddenNeurons; i++)
+	for (i = 0; i < HiddenNeurons2; i++)
+	{
+		for (j = 0; j < HiddenNeurons1 + 1; j++)
+			WeigthsHidd2[i][j] = WeigthsHidd2[i][j] + (nu * hidd_deltas2[i] * HiddenLayer1[j]);
+	}
+
+	for (i = 0; i < HiddenNeurons1; i++)
 	{
 		for (j = 0; j < InputNeurons + 1; j++)
-			WeigthsHidd[i][j] = WeigthsHidd[i][j] + (nu * hidd_deltas[i] * InputLayer[j]);
+			WeigthsHidd1[i][j] = WeigthsHidd1[i][j] + (nu * hidd_deltas1[i] * InputLayer[j]);
 	}
 }
 
@@ -288,7 +324,7 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 		Error = 0;
 		loop++;
 
-		cout << "Thresholds =    " << Threshold1 <<" , "<< Threshold2 << endl;
+		cout << "Thresholds =    " << Threshold1 << " , " << Threshold2 << endl;
 
 		//Printing the number of loop.
 		if (loop < 10)
@@ -324,9 +360,9 @@ bool BackPropagationNet::TrainNet(Data& data_obj)
 		Success = ((data_obj.Units - Error) * 100) / data_obj.Units;
 		cout << Success << " %   success" << endl << endl;
 
-	
 
-	} while (Success < 85 && loop <= 20000);
+
+	} while (Success < 80 && loop <= 20000);
 
 	if (loop > 20000)
 	{
@@ -430,7 +466,7 @@ bool BackPropagationNet::TrainNetRand(Data& data_obj) {
 
 
 
-	} while (Success < 80 && loop <= 20000);
+	} while (Success < 90 && loop <= 20000);
 
 	if (loop > 20000)
 	{
@@ -521,6 +557,7 @@ bool Data::SetInputOutputRand_Test(char In[][Y][X], double* Out, int num_pattern
 
 
 //_________________________________________________________________________
+
 bool Data::SetInputOutputRand15(char In[][Y][X], double* Out, int num_patterns) {
 	int n, i, j;
 
@@ -686,6 +723,7 @@ void Data::SetUnorderedNumbers_Test(int size)
 	}
 }
 
+
 //_________________________________________________________________________
 
 void Data::SetUnorderedNumbers15(int size)
@@ -779,7 +817,6 @@ void Data::SetUnorderedNumbers57(int size)
 
 //_________________________________________________________________________
 
-
 bool Data::SetInputOutput(char In[][Y][X], double* Out, int num_patterns)
 {
 	int n, i, j;
@@ -855,8 +892,8 @@ void main()
 		return;
 	}
 
-		if (!data_obj.SetInputOutput(TrainingInput1, TrainingOutput1, TrainPatt1))
-			return;
+	if (!data_obj.SetInputOutput(TrainingInput1, TrainingOutput1, TrainPatt1))
+		return;
 
 	while (!(flag = back_prop_obj.TrainNet(data_obj)))
 	{
@@ -1064,9 +1101,3 @@ void main()
 	back_prop_obj.TestNet(data_obj);
 	close(fd6);
 }
-
-
-
-
-
-
