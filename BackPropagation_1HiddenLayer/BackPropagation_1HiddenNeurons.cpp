@@ -9,10 +9,10 @@
 */
 
 //This is a Back Propagation network. It consists layers:
-//25 neurons on input layer, 10 neurons on hidden layer and one
+//100 neurons on input layer, 50 neurons on hidden layer and one
 //neuron on output layer.
 
-//This programm use function: F(NET) = tanh (NET), that takes values
+//This programm use function: F(NET) = 1/(1+exp(-1*NET), that takes values
 //from -1 to +1.
 //The values of the neurons in the hidden layer are continuous.
 //The values of the input and output neurons are diskreet.
@@ -836,7 +836,8 @@ void main()
 
 	cout << "Back Propagation Network" << endl << endl;
 	cout << "This programm will not print anything onto display." << endl;
-	cout << "All results of this programm will be in files: result_5_GROUPS.txt,result_10_GROUPS.txt,result_19_GROUPS.txt " << endl;
+	cout << "All results of this programm will be in files: result_5_GROUPS_RAND,result_5_GROUPS_SEQ" << endl;
+	cout << "result_10_GROUPS_RAND.txt,result_10_GROUPS_SEQ.txt,result_19_GROUPS_RAND.txt,result_19_GROUPS_SEQ.txt " << endl;
 	cout << "after this programm will stop to run." << endl;
 	cout << "Please wait until it's all done" << endl;
 	cout << "Before runing this programm again, please delete the old files";
