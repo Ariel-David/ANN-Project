@@ -147,7 +147,6 @@ public:
 BackPropagationNet::BackPropagationNet()
 {
 	nu = 0.1f;
-
 	srand((unsigned)time(NULL));
 	Initialize();
 }
